@@ -1,19 +1,36 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Pagination } from './components/Pagination';
 import { getNumbers } from './utils';
+import { useEffect } from 'react';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { useSearchParams } from 'react-router-dom';
 
 const items = getNumbers(1, 42).map(n => `Item ${n}`);
 
 export const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const pageFromUrl = Number(searchParams.get('page')) || 1;
+  const perPageFromUrl = Number(searchParams.get('perPage')) || 5;
+
+  const [currentPage, setCurrentPage] = React.useState(pageFromUrl);
+  const [perPage, setPerPage] = React.useState(perPageFromUrl);
 
   const total = items.length;
 
-  const firstIndex = (currentPage - 1) * itemsPerPage;
-  const lastIndex = Math.min(firstIndex + itemsPerPage, total);
+  // visible items range
+  const firstIndex = (currentPage - 1) * perPage;
+  const lastIndex = Math.min(firstIndex + perPage, total);
 
   const visibleItems = items.slice(firstIndex, lastIndex);
+
+  // sync URL
+  useEffect(() => {
+    setSearchParams({
+      page: String(currentPage),
+      perPage: String(perPage),
+    });
+  }, [currentPage, perPage, setSearchParams]);
 
   return (
     <div className="container">
@@ -29,10 +46,10 @@ export const App: React.FC = () => {
             data-cy="perPageSelector"
             id="perPageSelector"
             className="form-control"
-            value={itemsPerPage}
+            value={perPage}
             onChange={e => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
+              setPerPage(Number(e.target.value));
+              setCurrentPage(1); // must return to page 1
             }}
           >
             <option value="3">3</option>
@@ -49,7 +66,7 @@ export const App: React.FC = () => {
 
       <Pagination
         total={total}
-        perPage={itemsPerPage}
+        perPage={perPage}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
       />
